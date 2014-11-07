@@ -33,8 +33,9 @@ module Redirector
     # { 'www.thing.gov.uk'  => ['thing1', 'dfe'],
     #   'www.thing3.gov.uk' => ['thing3', 'bis']
     # }
-    # This is so that the validates_uniqueness! method can check if
-    # there are multiple site abbreviations and therefore duplicates.
+    # This is so that the first part of the validates_unique_and_lowercase!
+    # method can check if there are multiple site abbreviations and
+    # therefore duplicates.
     def self.hosts_to_site_abbrs(masks = MASKS)
       # Default entries in the hash to empty array
       # http://stackoverflow.com/a/2552946/3726525
@@ -47,19 +48,14 @@ module Redirector
       hosts_to_site_abbrs
     end
 
-    def self.validate_uniqueness!(masks = MASKS)
+    def self.validate_unique_and_lowercase!(masks = MASKS)
       duplicates = {}
+      uppercase  = {}
       hosts_to_site_abbrs(masks).each do |host, abbrs|
         duplicates[host] = abbrs if abbrs.size > 1
-      end
-      raise Redirector::DuplicateHostsException.new(duplicates) unless duplicates.empty?
-    end
-
-    def self.validate_lowercase!(masks = MASKS)
-      uppercase = {}
-      Hosts.all(masks) do |_, host|
         uppercase[host] = host unless host == host.downcase
       end
+      raise Redirector::DuplicateHostsException.new(duplicates) unless duplicates.empty?
       raise Redirector::UppercaseHostsException.new(uppercase) unless uppercase.empty?
     end
   end
